@@ -1,4 +1,7 @@
 const express = require('express')
+const dotenv = require('dotenv');
+dotenv.config();
+const cors = require('cors')
 const { pool } = require('./db')
 const queries = require('./src/utils/dbQueries')
 const userRoutes = require('./src/routes/userRoutes')
@@ -6,15 +9,17 @@ const swaggerUi = require('swagger-ui-express')
 const swaggerJson = require('./src/utils/swagger-json.json')
 const app = express()
 
-const port = 3000
-const url = '/api/v1'       // URL
-app.use(express.json())
+const port = process.env.PORT // dotenv PORT
+const url = process.env.API      // dotenv URL
 
-//Middlewares
+//CORS Policy and json
+app.use(express.json())
+app.use(cors())
+
+ //Middlewares
   //Swagger Ui Interface
 app.use('/swagger',swaggerUi.serve , swaggerUi.setup(swaggerJson))
-
-//Handles User Routes
+//Handles User Route
 app.use(`${url}/users`,userRoutes)
 
 //If user intereact with base path redirect to main path
@@ -37,6 +42,5 @@ pool.connect().then(res => {
             console.log(`port listen at port = http://localhost:${port}/`)
         })
     })
-   
 }).catch(err => console.log(err + 'error'))
 

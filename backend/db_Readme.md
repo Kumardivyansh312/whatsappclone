@@ -21,3 +21,12 @@ Then open ui for postgres and start the service
 
 - to clear the terminal
  > \! clear for mac \! cls for other
+
+
+ ----- Dummy user
+    {
+  "username": "anshul",
+  "password": "123456",
+  "confirmPassword": "123456",
+  "name": "Anshul"
+}
