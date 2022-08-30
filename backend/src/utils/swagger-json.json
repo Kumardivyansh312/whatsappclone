@@ -250,6 +250,66 @@
           }
         }
       }
+    },
+    "/users/userPasswordResetWithEmail/{id}/{token}":{
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Reset Forget Password",
+        "description": "Reset Password Using Reset Link",
+        "operationId": "Reset Password",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "token",
+            "in": "path",
+            "description": "token recieved from email",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Reset user Password",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/changeUserPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/changeUserPassword"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status value"
+          }
+        }
+      }
     }
   },
 

@@ -12,6 +12,7 @@ route.get('/', userControllers.getAllUsers)
 route.post('/register',userControllers.registerUser)
 route.post('/login',userControllers.loginUser)
 route.post('/sendUserPasswordResetEmail',userControllers.sendUserPasswordResetEmail)
+route.put('/userPasswordResetWithEmail/:id/:token',userControllers.userPasswordResetWithEmail)
 
 //Protected Route
 route.post('/changePassword' , userControllers.changePassword)

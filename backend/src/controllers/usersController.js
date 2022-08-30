@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 const userQueries = require('./queries/userQueries')
 const { json } = require('express')
 const { portalSuspended } = require('pg-protocol/dist/messages')
+const { transporter } = require('../utils/emailConfig')
 
 //Get allUsers From db
 
@@ -105,11 +106,18 @@ const sendUserPasswordResetEmail = (req, res) => {
             if (err) throw err
             if (result.rows.length) {
                 const secret = result.rows[0].id + process.env.JWT_SECRET_KEY
-                const signToken = jwt.sign({ userId: result.rows[0].id }, secret, { expiresIn: '15m' })
+                const signToken = jwt.sign({ userId: result.rows[0].id }, secret, { expiresIn: '5m' })
                 const link = `http://127.0.0.1:3000/api/v1/users/sendUserPasswordResetEmail/${result.rows[0].id}/${signToken
                     }`
-                console.log(link)
-                res.json({ success: true, message: "Reset mail sent please check your mail" })
+                    console.log(result.rows[0])
+                    const info = await transporter.sendMail({
+                        from: process.env.EMAIL_FROM, // sender address
+                        to: result.rows[0].email, // list of receivers
+                        subject: "Divyansh - Password Reset Link", // Subject line
+                        text: "This is your Password Reset Link", // plain text body
+                        html: `<a href=${link}>Click Here !</a>`, // html body
+                      });
+                res.json({ success: true, message: "Reset mail sent please check your mail", id:result.rows[0].id ,token:signToken,info:info })
             } else {
                 res.json({ success: false, message: "Your Email Not Found Please Register" })
             }
@@ -124,13 +132,31 @@ const sendUserPasswordResetEmail = (req, res) => {
 const userPasswordResetWithEmail = (req, res) => {
     const { password, confirmPassword } = req.body
     const { id, token } = req.params
-    pool.query(userQueries.geUserById,[id],(err,result)=>{
-        if(err) throw err
-        if(result.rows.length){
-           const secret = result.rows[0].id + process.env.JWT_SECRET_KEY
-           jwt.verify(token,secret)
-        }else{
-        res.json({ success: false, message: "Invalid! User not found" })
+    pool.query(userQueries.geUserById, [id], async (err, result) => {
+        if (err) throw err
+        if (result.rows.length) {
+            const secret = result.rows[0].id + process.env.JWT_SECRET_KEY
+            try {
+                jwt.verify(token, secret)
+                if (password && confirmPassword) {
+                    if (password === confirmPassword) {
+                        const salt = await bcrypt.genSalt(10)
+                        const hashPassword = await bcrypt.hash(password, salt)
+                        pool.query(userQueries.updateUserPassword, [hashPassword, id], (err, result) => {
+                            if (err) throw err
+                            res.json({ success: true, message: `Password updated` })
+                        })
+                    } else {
+                        res.json({ success: false, message: "Password and confirm Password not Matched" })
+                    }
+                } else {
+                    res.json({ success: false, message: "All Feilds Required" })
+                }
+            } catch {
+                res.send({success:false,message:"Expired or Invalid Token"})
+            }
+        } else {
+            res.json({ success: false, message: "Invalid! User not found" })
         }
     })
 }
