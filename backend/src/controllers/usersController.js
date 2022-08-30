@@ -109,15 +109,21 @@ const sendUserPasswordResetEmail = (req, res) => {
                 const signToken = jwt.sign({ userId: result.rows[0].id }, secret, { expiresIn: '5m' })
                 const link = `http://127.0.0.1:3000/api/v1/users/sendUserPasswordResetEmail/${result.rows[0].id}/${signToken
                     }`
-                    console.log(result.rows[0])
-                    const info = await transporter.sendMail({
-                        from: process.env.EMAIL_FROM, // sender address
-                        to: result.rows[0].email, // list of receivers
-                        subject: "Divyansh - Password Reset Link", // Subject line
-                        text: "This is your Password Reset Link", // plain text body
-                        html: `<a href=${link}>Click Here !</a>`, // html body
-                      });
-                res.json({ success: true, message: "Reset mail sent please check your mail", id:result.rows[0].id ,token:signToken,info:info })
+                const mailOptions = {
+                    from: `"Divyansh kumar sharma" <${process.env.EMAIL_FROM}>`, // sender address
+                    to: `<${result.rows[0].email}>`, // list of receivers
+                    subject: "Divyansh - Password Reset Link", // Subject line
+                    text: "This is your Password Reset Link", // plain text body
+                    html: `<a href=${link}>Click Here !</a>`, // html body
+                };
+                transporter.sendMail(mailOptions, function (error, info) {
+                    if (error) {
+                        console.log(error);
+                    } else {
+                        console.log('Email sent: ' + info.response);
+                        res.json({ success: true, message: "Reset mail sent please check your mail", id: result.rows[0].id, token: signToken, info: info })
+                    }
+                });
             } else {
                 res.json({ success: false, message: "Your Email Not Found Please Register" })
             }
@@ -153,7 +159,7 @@ const userPasswordResetWithEmail = (req, res) => {
                     res.json({ success: false, message: "All Feilds Required" })
                 }
             } catch {
-                res.send({success:false,message:"Expired or Invalid Token"})
+                res.send({ success: false, message: "Expired or Invalid Token" })
             }
         } else {
             res.json({ success: false, message: "Invalid! User not found" })
