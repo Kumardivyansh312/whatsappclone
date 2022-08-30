@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const userQueries = require('./queries/userQueries')
 const { json } = require('express')
+const { portalSuspended } = require('pg-protocol/dist/messages')
 
 //Get allUsers From db
 
@@ -16,7 +17,7 @@ const getAllUsers = (req, res) => {
 //Get Register User In db
 
 const registerUser = (req, res) => {
-    const { username, password, confirmPassword, name } = req.body
+    const { username, password, confirmPassword, name, email } = req.body
     if (username && password && confirmPassword && name) {
         pool.query(userQueries.checkUsername, [username], async (err, result) => {
             if (err) throw err
@@ -26,14 +27,13 @@ const registerUser = (req, res) => {
                 if (password === confirmPassword) {
                     const salt = await bcrypt.genSalt(10)
                     const hashPassword = await bcrypt.hash(password, salt)
-                    pool.query(userQueries.addUser, [username, hashPassword, name], (err, result) => {
+                    pool.query(userQueries.addUser, [username, hashPassword, name, email], (err, result) => {
                         if (err) throw err
-                        res.json({ success: true, message: "User Stored", data: { username: username, name: name } })
+                        res.json({ success: true, message: "User Stored", data: { username: username, name: name, email: email } })
                     })
                 } else {
                     res.json({ success: false, message: "password and confirm Password did not matched" })
                 }
-
             }
         })
     } else {
@@ -41,7 +41,7 @@ const registerUser = (req, res) => {
     }
 }
 
-//Check User and provide login
+//Check User and provide login JWT token
 
 const loginUser = (req, res) => {
     const { username, password } = req.body
@@ -71,7 +71,7 @@ const loginUser = (req, res) => {
     }
 }
 
-// Change Password
+// Change Password for authenticated user
 
 const changePassword = async (req, res) => {
     const { id, username } = req.user
@@ -81,16 +81,66 @@ const changePassword = async (req, res) => {
         const hashPassword = await bcrypt.hash(password, salt)
         pool.query(userQueries.updateUserPassword, [hashPassword, id], (err, result) => {
             if (err) throw err
-            res.json({ success: true, message: `Password updated for ${username}`})
+            res.json({ success: true, message: `Password updated for ${username}` })
         })
     } else {
         res.json({ success: false, message: "password and confirm Password did not matched" })
     }
 }
 
+// Get Logged in user Information
+
+const loggedInUserInProfile = (req, res) => {
+    let data = req.user    // Getting user
+    delete data['password']   // deleting passwrod feild from the user recieved
+    res.status(200).send(data)  // Sending response with updated user Information
+}
+
+// Send userpassword reset email
+
+const sendUserPasswordResetEmail = (req, res) => {
+    const { email } = req.body
+    if (email) {
+        pool.query(userQueries.checkEmail, [email], async (err, result) => {
+            if (err) throw err
+            if (result.rows.length) {
+                const secret = result.rows[0].id + process.env.JWT_SECRET_KEY
+                const signToken = jwt.sign({ userId: result.rows[0].id }, secret, { expiresIn: '15m' })
+                const link = `http://127.0.0.1:3000/api/v1/users/sendUserPasswordResetEmail/${result.rows[0].id}/${signToken
+                    }`
+                console.log(link)
+                res.json({ success: true, message: "Reset mail sent please check your mail" })
+            } else {
+                res.json({ success: false, message: "Your Email Not Found Please Register" })
+            }
+        })
+    } else {
+        res.json({ success: false, message: "ALl Feilds are Required" })
+    }
+}
+
+// Get password and confirm password from reset email 
+
+const userPasswordResetWithEmail = (req, res) => {
+    const { password, confirmPassword } = req.body
+    const { id, token } = req.params
+    pool.query(userQueries.geUserById,[id],(err,result)=>{
+        if(err) throw err
+        if(result.rows.length){
+           const secret = result.rows[0].id + process.env.JWT_SECRET_KEY
+           jwt.verify(token,secret)
+        }else{
+        res.json({ success: false, message: "Invalid! User not found" })
+        }
+    })
+}
+
 module.exports = {
     getAllUsers,
     registerUser,
     loginUser,
-    changePassword
+    changePassword,
+    loggedInUserInProfile,
+    sendUserPasswordResetEmail,
+    userPasswordResetWithEmail
 }

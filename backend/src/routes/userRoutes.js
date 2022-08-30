@@ -5,13 +5,16 @@ const route = Router()
 
 //Middleware to authenticate token
 route.use('/changePassword', userAuthenMiddleware.verifyAuthenticatedUser )
+route.use('/loggedUser',userAuthenMiddleware.verifyAuthenticatedUser)
 
 //Public Route
 route.get('/', userControllers.getAllUsers)
 route.post('/register',userControllers.registerUser)
 route.post('/login',userControllers.loginUser)
+route.post('/sendUserPasswordResetEmail',userControllers.sendUserPasswordResetEmail)
 
 //Protected Route
 route.post('/changePassword' , userControllers.changePassword)
+route.get('/loggedUser',userControllers.loggedInUserInProfile)
 
 module.exports = route

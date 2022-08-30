@@ -24,6 +24,10 @@
       "description": "Everything about users"
     }
   ],
+
+
+
+
   "paths": {
     "/users": {
       "get": {
@@ -174,8 +178,83 @@
           }
         ]
       }
+    },
+    "/users/loggedUser":{
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get logged in user information",
+        "description": "Logged in user from JWT Token",
+        "operationId": "Information of User",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/userFetch"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status value"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/users/sendUserPasswordResetEmail":{
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Forget password Reset",
+        "description": "Enter your Email to get a reset link",
+        "operationId": "email change",
+        "requestBody": {
+          "description": "Change user Password",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/restEmailForUser"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/restEmailForUser"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status value"
+          }
+        }
+      }
     }
   },
+
+
+
   "components": {
     "schemas": {
       "userRegister": {
@@ -196,6 +275,10 @@
           "name": {
             "type": "string",
             "example": "abcd"
+          },
+          "email": {
+            "type": "string",
+            "example": "abcd"
           }
         },
         "xml": {
@@ -211,6 +294,10 @@
             "example": 1
           },
           "name": {
+            "type": "string",
+            "example": "abcd"
+          },
+          "email": {
             "type": "string",
             "example": "abcd"
           }
@@ -243,6 +330,18 @@
             "example": "abcd"
           },
           "confirmPassword": {
+            "type": "string",
+            "example": "abcd"
+          }
+        },
+        "xml": {
+          "name": "order"
+        }
+      },
+      "restEmailForUser": {
+        "type": "object",
+        "properties": {
+          "email": {
             "type": "string",
             "example": "abcd"
           }
